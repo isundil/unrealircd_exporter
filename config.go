@@ -5,12 +5,13 @@ import (
 )
 
 type Config struct {
-	Listen string
-	Link   string
-	Name   string
-	Sid    int
-	Cert   string
-	Key    string
+	Listen 			string
+	Link   			string
+	Name   			string
+	Sid    			int
+	Cert   			string
+	Key    			string
+	NickServPassword	string
 }
 
 func LoadConfig(configFile string) (*Config, error) {

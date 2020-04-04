@@ -34,10 +34,12 @@ func RegisterHandler(command string, handler handler) {
 	handlers[command] = handler
 }
 
-func GetLinkStats(context *Context, conn *tls.Conn, sid int, logger log.Logger) {
+func GetLinkStats(context *Context, conn *tls.Conn, sid int, nickServPassword string, logger log.Logger) {
 	for {
 		for _, hostname := range context.GetServersHostnames() {
+			SendRaw(conn, fmt.Sprintf(":%d000000 ns identify %s", sid, nickServPassword), logger)
 			SendRaw(conn, fmt.Sprintf(":%d000000 STATS L %s", sid, hostname), logger)
+			SendRaw(conn, fmt.Sprintf(":%d000000 os STATS ALL", sid), logger)
 		}
 
 		time.Sleep(15 * time.Second)
@@ -56,6 +58,9 @@ func init() {
 	prometheus.MustRegister(statsSendM)
 	prometheus.MustRegister(statsSendQ)
 	prometheus.MustRegister(users)
+	prometheus.MustRegister(registeredUsers)
+	prometheus.MustRegister(chans)
+	prometheus.MustRegister(registeredChans)
 
 	// Version metric from github.com/prometheus/common
 	prometheus.MustRegister(version.NewCollector("unrealircd_exporter"))
@@ -67,6 +72,7 @@ func init() {
 	RegisterHandler("QUIT", QuitHandler)
 	RegisterHandler("SERVER", ServerHandler)
 	RegisterHandler("PING", PingHandler)
+	RegisterHandler("NOTICE", MsgHandler)
 	RegisterHandler("211", StatsLHandler)
 }
 
@@ -125,15 +131,15 @@ func main() {
 	SendRaw(conn, "PASS password", logger)
 	SendRaw(conn, fmt.Sprintf("PROTOCTL EAUTH=%s SID=%d ", conf.Name, conf.Sid), logger)
 	SendRaw(conn, "PROTOCTL NOQUIT NICKv2 SJOIN SJ3 CLK TKLEXT TKLEXT2 NICKIP ESVID MLOCK EXTSWHOIS", logger)
-	SendRaw(conn, fmt.Sprintf("SERVER %s 345 :Prometheus exporter", conf.Name), logger)
+	SendRaw(conn, fmt.Sprintf("SERVER %s 1 :Prometheus exporter", conf.Name), logger)
 	SendRaw(conn, "EOS", logger)
 
 	// Create our own user so to have ircop capabilities
 	// UID nickname hopcount timestamp username hostname uid servicestamp umodes virthost cloakedhost ip :gecos
-	SendRaw(conn, fmt.Sprintf("UID P 0 0 Prometheus 127.0.0.1 %d000000 0 +Soip * %s * :Prometheus", conf.Sid, conf.Name), logger)
+	SendRaw(conn, fmt.Sprintf("UID P 0 0 Prometheus 127.0.0.1 %d000000 0 +Srdoip * %s * :Prometheus", conf.Sid, conf.Name), logger)
 
 	// let's collect link stats
-	go GetLinkStats(context, conn, conf.Sid, logger)
+	go GetLinkStats(context, conn, conf.Sid, conf.NickServPassword, logger)
 
 	// We already have the server we're connecting to and the exporter
 	serversCount.Set(1)

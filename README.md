@@ -3,6 +3,9 @@ unrealircd_exporter
 
 `unrealircd_exporter` acts as a service to your unrealircd network. It will gather everything that is happening on the network and will provide the following metrics:
 - `irc_users`: count of users per server on the network
+- `irc_chans`: count of channels
+- `irc_registered_chans`: count of total registered channels
+- `irc_registered_users`: count of total registered users
 - `events_total`: count of events per server and per type
 - `stats_sendq`: SendQ size for each link
 - `stats_sendm`: SendM for each link
@@ -38,6 +41,8 @@ Sid = 999
 # Path to key and cert to use
 Cert = "./cert.pem"
 Key = "./key.pem"
+
+NickServPassword = "password"
 ```
 
 See `examples/config.toml`

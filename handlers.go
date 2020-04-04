@@ -8,6 +8,7 @@ import (
 	"gopkg.in/sorcix/irc.v2"
 	"strconv"
 	"strings"
+	"regexp"
 )
 
 // Example:
@@ -137,6 +138,46 @@ func PingHandler(_ *Context, encoder *irc.Encoder, message *irc.Message, logger 
 	err := encoder.Encode(&response)
 	if err != nil {
 		level.Error(logger).Log("error", err.Error())
+	}
+}
+
+func MsgHandler(_ *Context, encoder *irc.Encoder, message *irc.Message, logger log.Logger) {
+	var conf,_ = LoadConfig("config.toml")
+	var reChan = regexp.MustCompile(`Channels: ([0-9]+) entries`);
+	var reRegChan = regexp.MustCompile(`Registered channels: ([0-9]+) entries`);
+	var reRegNick = regexp.MustCompile(`Registered nicknames: ([0-9]+) entries`);
+
+	if message.Prefix.Name != "00BAAAAAI" || message.Params[0] != fmt.Sprintf("%d000000", conf.Sid) {
+		return
+	}
+
+	resChan := reChan.FindSubmatch([]byte(message.Params[1]));
+	resRegChan := reRegChan.FindSubmatch([]byte(message.Params[1]));
+	resRegNick := reRegNick.FindSubmatch([]byte(message.Params[1]));
+
+	if len(resChan) > 1 {
+		count, err := strconv.ParseFloat(fmt.Sprintf("%s", resChan[1]), 64)
+		if err != nil {
+			level.Error(logger).Log("error", fmt.Sprintf("Failed interpreting number from message %s (%s): %s", message.Params[1], fmt.Sprintf("%q", resChan[1]), err))
+			return
+		}
+		chans.Set(count)
+	}
+	if len(resRegChan) > 1 {
+		count, err := strconv.ParseFloat(fmt.Sprintf("%s", resRegChan[1]), 64)
+		if err != nil {
+			level.Error(logger).Log("error", fmt.Sprintf("Failed interpreting number from message %s (%s): %s", message.Params[1], fmt.Sprintf("%q", resRegChan[1]), err))
+			return
+		}
+		registeredChans.Set(count)
+	}
+	if len(resRegNick) > 1 {
+		count, err := strconv.ParseFloat(fmt.Sprintf("%s", resRegNick[1]), 64)
+		if err != nil {
+			level.Error(logger).Log("error", fmt.Sprintf("Failed interpreting number from message %s (%s): %s", message.Params[1], fmt.Sprintf("%q", resRegNick[1]), err))
+			return
+		}
+		registeredUsers.Set(count)
 	}
 }
 

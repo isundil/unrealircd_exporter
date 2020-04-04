@@ -11,6 +11,27 @@ var (
 		[]string{"server", "encryption"},
 	)
 
+	registeredUsers = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "irc_registered_users",
+			Help: "Number of registered users.",
+		},
+	)
+
+	chans = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "irc_chans",
+			Help: "Number of channels.",
+		},
+	)
+
+	registeredChans = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "irc_registered_chans",
+			Help: "Number of registered channels.",
+		},
+	)
+
 	eventsCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "events_total",
